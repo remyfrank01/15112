@@ -1,0 +1,326 @@
+#################################################
+# hw7.py: Tetris!
+#
+# Your name:Remington Frank-Marquez 
+# Your andrew id:rfrankma
+#
+# Your partner's name:Nataniel Arocho-Nieves
+# Your partner's andrew id:narochon
+#################################################
+
+import cs112_f19_week7_linter
+import math, copy, random
+
+from cmu_112_graphics import *
+from tkinter import *
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+def gameDimensions():
+    rows = 15
+    cols = 10
+    cellSize = 20
+    margin = 25
+
+    return (rows, cols, cellSize, margin)
+
+def appStarted(app):
+    app.timerDelay = 300
+    app.isGameOver = False
+    app.score = 0
+
+    iPiece = [
+        [  True,  True,  True,  True ]
+    ]
+    jPiece = [
+        [  True, False, False ],
+        [  True,  True,  True ]
+    ]
+    lPiece = [
+        [ False, False,  True ],
+        [  True,  True,  True ]
+    ]
+    oPiece = [
+        [  True,  True ],
+        [  True,  True ]
+    ]
+    sPiece = [
+        [ False,  True,  True ],
+        [  True,  True, False ]
+    ]
+    tPiece = [
+        [ False,  True, False ],
+        [  True,  True,  True ]
+    ]
+    zPiece = [
+        [  True,  True, False ],
+        [ False,  True,  True ]
+    ]
+
+    app.tetrisPieces = [ iPiece, jPiece, lPiece, 
+        oPiece, sPiece, tPiece, zPiece ]
+    app.tetrisPieceColors = [ "red", "yellow", "magenta", 
+        "pink", "cyan", "green", "orange" ]
+
+    (app.rows, app.cols, app.cellSize, app.margin) = gameDimensions()
+    app.emptyColor = "blue"
+
+    app.board = []
+    for i in range (app.rows):
+        tempList = []
+        for j in range (app.cols):
+            tempList += [app.emptyColor]
+        app.board.append(tempList)
+    
+    newFallingPiece(app)
+
+def keyPressed(app, event):
+    if(event.key == 'Left'):
+        if(fallingPieceIsLegal(app) == False):
+            moveFallingPiece(app, 0, +1)
+        moveFallingPiece(app, 0, -1)
+    elif(event.key == 'Right'):
+        if(fallingPieceIsLegal(app) == False):
+            moveFallingPiece(app, 0, -1)
+        moveFallingPiece(app, 0, +1)
+    elif(event.key == 'Down'):
+        if(fallingPieceIsLegal(app) == False):
+            moveFallingPiece(app, -1, 0)
+        moveFallingPiece(app, +1, 0)
+    elif(event.key == 'Up'):
+        if(fallingPieceIsLegal(app)):
+            rotateFallingPiece(app)
+    elif(event.key == 'r'):
+        appStarted(app)
+    elif(event.key == 'Space'):
+        hardDropPiece(app)
+
+def moveFallingPiece(app, drow, dcol):
+    app.fallingPieceRow += drow
+    app.fallingPieceCol += dcol
+
+    if(fallingPieceIsLegal(app) == False):
+        app.fallingPieceRow -= drow
+        app.fallingPieceCol -= dcol
+        return False
+    return True
+
+def hardDropPiece(app):
+    for i in range(len(app.board) - app.fallingPieceRow):
+        moveFallingPiece(app, +1, 0)
+        if(fallingPieceIsLegal(app) == False):
+            break
+
+def rotateFallingPiece(app):
+    (pieceRows, pieceCols) = (len(app.fallingPiece), len(app.fallingPiece[0]))
+    placeHolderList = app.fallingPiece
+
+    oldCenterRow = app.fallingPieceRow + (len(app.fallingPiece) // 2)
+    oldNumRows = len(app.fallingPiece)
+    oldRow = app.fallingPieceRow
+
+    oldCenterCol = app.fallingPieceRow + (len(app.fallingPiece) // 2)
+    oldNumCols = len(app.fallingPiece[0])
+    oldCol = app.fallingPieceCol
+
+    numRows = pieceCols
+    numCols = pieceRows
+
+    newFallingPiece = []
+
+    for i in range(numRows):
+        tempList = []
+        for j in range(numCols):
+            tempList += [None]
+        newFallingPiece.append(tempList)
+
+
+    for row in range(len(app.fallingPiece)):
+        newCol = row
+        for col in range(len(app.fallingPiece[0])):
+            newRow = (pieceCols - 1) - col
+            newFallingPiece[newRow][newCol] = app.fallingPiece[row][col] 
+    
+    app.fallingPiece = newFallingPiece
+
+    centerRow = app.fallingPieceRow + app.numFallingPieceRows // 2
+    newCenterRow = app.fallingPieceRow + len(app.fallingPiece) // 2
+    newNumRows = len(app.fallingPiece)
+
+    centerCol = app.fallingPieceCol + app.numFallingPieceCols // 2
+    newCenterCol = app.fallingPieceCol + len(app.fallingPiece) // 2
+    newNumCols = len(app.fallingPiece[0])
+
+    newRow = oldRow + oldNumRows//2 - newNumRows//2
+    newCol = oldCol + oldNumCols//2 - newNumCols//2
+
+    app.fallingPieceRow = newRow
+    app.fallingPieceCol = newCol
+
+    if(fallingPieceIsLegal(app) == False):
+        app.fallingPiece = placeHolderList
+        app.fallingPieceRow = oldRow
+        app.fallingPieceCol = oldCol
+
+
+
+def fallingPieceIsLegal(app):
+    for row in range(len(app.fallingPiece)):
+        for col in range(len(app.fallingPiece[0])):
+            if (app.fallingPiece[row][col]):
+                if((app.fallingPieceRow + row) >= app.rows or
+                    app.fallingPieceRow < 0 or
+                    (app.fallingPieceCol + col) >= app.cols or
+                    app.fallingPieceCol < 0):
+                    return False
+
+                elif(app.board[app.fallingPieceRow + row]
+                     [app.fallingPieceCol + col] != app.emptyColor):
+                     return False
+    return True
+
+def newFallingPiece(app):
+    randomIndex = random.randint(0, len(app.tetrisPieces)-1)
+    app.fallingPiece = app.tetrisPieces[randomIndex]
+    app.fallingPieceColor = app.tetrisPieceColors[randomIndex]
+
+    app.fallingPieceRow = 0
+    app.numFallingPieceRows = len(app.fallingPiece)
+    app.numFallingPieceCols = len(app.fallingPiece[0])
+    app.fallingPieceCol = (app.cols // 2) - (app.numFallingPieceCols // 2)
+
+def placeFallingPiece(app):
+    for row in range(len(app.fallingPiece)):
+        for col in range(len(app.fallingPiece[0])):
+            if(app.fallingPiece[row][col]):
+                app.board[app.fallingPieceRow+row]\
+                [app.fallingPieceCol+col] = app.fallingPieceColor
+    removeFullRows(app)
+
+def removeFullRows(app):
+    fullRows = 0
+    newBoard = []
+    for row in range (len(app.board)):
+        cellCount = 0
+        for col in range(len(app.board[0])):
+            if(app.board[row][col] != app.emptyColor):
+                cellCount += 1
+        if(cellCount == len(app.board[0])):
+            fullRows += 1
+        else:
+            newBoard.append(app.board[row])
+    
+    for i in range (fullRows):
+        tempList = []
+        for j in range (app.cols):
+            tempList += [app.emptyColor]
+        newBoard.insert(0, tempList)
+
+    app.score += (fullRows ** 2)
+    app.board = newBoard
+
+def timerFired(app):
+    if(app.isGameOver):
+        return
+    moveFallingPiece(app, +1, 0)
+    if(moveFallingPiece(app, +1, 0) == False):
+        placeFallingPiece(app)
+        newFallingPiece(app)
+        if(fallingPieceIsLegal(app) == False):
+            app.isGameOver = True
+
+
+def drawBoard(app, canvas):
+    boardWidth = (2 * app.margin) + (app.cols * app.cellSize)
+    boardHeight = (2 * app.margin) + (app.rows * app.cellSize)
+
+    canvas.create_rectangle(0, 0, boardWidth, boardHeight, fill = "orange")
+
+    for row in range(app.rows):
+        for col in range(app.cols):
+            color = app.board[row][col]
+            drawCell(app, canvas, row, col, color)
+
+def drawFallingPiece(app, canvas):
+    for row in range(len(app.fallingPiece)):
+        for col in range(len(app.fallingPiece[0])):
+            if(app.fallingPiece[row][col]):
+                drawCell(app, canvas, app.fallingPieceRow + row, 
+                    app.fallingPieceCol + col, app.fallingPieceColor)
+
+def drawCell(app, canvas, row, col, color):
+    x0 = app.margin + (col * app.cellSize)
+    y0 = app.margin + (row * app.cellSize)
+    x1 = app.margin + ((col+1) * app.cellSize)
+    y1 = app.margin + ((row+1) * app.cellSize)
+
+    canvas.create_rectangle(x0, y0, x1, y1, fill = color)
+
+def drawScore(app, canvas):
+    (rows, cols, cellSize, margin) = gameDimensions()
+    boardWidth = (2 * margin) + (cols * cellSize)
+
+    x0 = boardWidth // 2
+    y0 = margin // 2
+
+    canvas.create_text(x0, y0, text = f'Score: {app.score}',
+        font = 'ComicSans 15 bold', fill = 'blue')
+
+def drawGameOver(app, canvas):
+    (rows, cols, cellSize, margin) = gameDimensions()
+    boardWidth = (2 * margin) + (cols * cellSize)
+    boardHeight = (2 * margin) + (rows * cellSize)
+
+    x0 = margin
+    y0 = margin + cellSize
+    x1 = boardWidth - margin
+    y1 = y0 + 2*cellSize
+
+    canvas.create_rectangle(x0, y0, x1, y1, fill= 'black')
+    canvas.create_text(x0 + ((x1-x0)/2), y0 + ((y1-y0)/2), 
+        text = "Game Over!", font = 'ComicSans 20', fill = 'yellow')
+
+def redrawAll(app, canvas):
+    drawBoard(app, canvas)
+    drawFallingPiece(app, canvas)
+    drawScore(app, canvas)
+    if(app.isGameOver):
+        drawGameOver(app, canvas)
+
+
+def playTetris():
+    (rows, cols, cellSize, margin) = gameDimensions()
+
+    boardWidth = (2 * margin) + (cols * cellSize)
+    boardHeight = (2 * margin) + (rows * cellSize)
+
+    runApp(width = boardWidth, height = boardHeight)
+
+
+#################################################
+# main
+#################################################
+
+def main():
+    cs112_f19_week7_linter.lint()
+    playTetris()
+
+if __name__ == '__main__':
+    main()
