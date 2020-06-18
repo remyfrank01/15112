@@ -1,0 +1,193 @@
+#################################################
+# hw10.py
+#
+# Your name:Remington Frank-Marquez
+# Your andrew id:rfrankma
+#################################################
+
+import cs112_f19_week10_linter
+import math, copy
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+
+#This recursive function will alternate through every two values and
+#subtract the ever other value, thus leading it to be an alternating sum.
+
+def alternatingSum(L):
+    if(len(L) == 0):
+        return 0
+    if(len(L) == 1):
+        return L[0]
+    else:
+        return L[0] - alternatingSum(L[1:])
+
+#This function utilizes a helper function 
+# (which itself is a recursive function) 
+#which calls the recurseive function. The recursive function getEvenDigits
+#utilizes recursion to loop through an 
+# integer and find the even numbers within
+#it. Then, onlyEvenDigits will continue to call itself in order to get the
+#even digits withing every number in the given list. 
+
+def onlyEvenDigits(L):
+    if(len(L) == 0):
+        return []
+    else:
+        return [getEvenDigits(L[0])] + onlyEvenDigits(L[1:])
+        
+def getEvenDigits(number):
+    evenDigits = 0
+    if(number == 0):
+        return 0
+    else:
+        currTestDigit = number % 10
+        if(currTestDigit % 2 == 0):
+            evenDigits += currTestDigit
+            return evenDigits + 10*getEvenDigits(number//10)
+        else:
+            return getEvenDigits(number//10)
+
+#PowersOf3ToN keeps track of every multiple 
+# of 3 that is less than the given n.
+#The function then addds those multiples of 3 to a list.
+        
+def powersOf3ToN(n, testValue = 1):
+    if(testValue > n):
+        return []
+    else:
+        return [testValue] + powersOf3ToN(n, 3*testValue)
+
+#BinarySearchValues makes a copy of the given list and then calls the helper 
+#function "binarySearchValuesWithList" which searches through the list
+#for the given item by dividing it into halves each time and kepping track
+#of both the element and index of said element that it checks.
+
+def binarySearchValuesWithList(L, item, LTwo):
+    if(len(L) == 0):
+        return []
+    else:
+        lo = L[0]
+        hi = L[len(L)-1]
+        mid = (len(L)-1)//2
+        if(L[mid] == item):
+            return [(LTwo.index(L[mid]), item)]
+        elif(L[mid] < item):
+            return [(LTwo.index(L[mid]), L[mid])] + \
+                binarySearchValuesWithList(L[mid+1:], item, LTwo)
+        else:
+            return [(LTwo.index(L[mid]), L[mid])] + \
+                binarySearchValuesWithList(L[:mid], item, LTwo)
+
+def binarySearchValues(L, item):
+    LTwo = copy.deepcopy(L)
+    return binarySearchValuesWithList(L, item, LTwo)
+
+#This recursive function keeps track of both the largest and secondLargest 
+#within a list. If the largest number is exceeded, it then becoms the 
+#secondLargest value within memory. The function then continues until the end 
+#of the list until there is 1 value left and that value is compared to the
+#current largest and then replaced if needed to be.
+
+def secondLargest(L):
+    if(len(L) <= 1):
+        return None
+    return secondLargestWithVals(L, L[0], L[1])
+
+def secondLargestWithVals(L, largest, secondLargest):
+    if(len(L) == 1):
+        if(L[0] > largest):
+            return largest
+        else:
+            return secondLargest
+    else:
+        if(L[1] > largest):
+            secondLargest = largest
+            largest = L[1]
+        return secondLargestWithVals(L[1:], largest, secondLargest)
+
+        
+
+
+
+#################################################
+# Test Functions
+#################################################
+
+def testAlternatingSum():
+    print('Testing alternatingSum()...', end='')
+    assert(alternatingSum([1,2,3,4,5]) == 1-2+3-4+5)
+    assert(alternatingSum([3,2,1]) == 3-2+1)
+    assert(alternatingSum([10,10,10,10]) == 0)
+    assert(alternatingSum([56,24,100,20]) == 56-24+100-20)
+    assert(alternatingSum([ ]) == 0)
+    print('Passed!')
+
+def testSecondLargest():
+    print('Testing secondLargest()...', end='')
+    assert(secondLargest([1,2,3,4,5]) == 4)
+    assert(secondLargest([4,3]) == 3)
+    assert(secondLargest([4,4,3]) == 4)
+    assert(secondLargest([-3,-4]) == -4)
+    assert(secondLargest([4]) == None)
+    assert(secondLargest([ ]) == None)
+    print('Passed!')
+
+def testOnlyEvenDigits():
+    print('Testing onlyEvenDigits()...', end='')
+    assert(onlyEvenDigits([43, 23265, 17, 58344]) == [4, 226, 0, 844])
+    assert(onlyEvenDigits([43, 420555, 69, 17654]) == [4, 420, 6, 64])
+    assert(onlyEvenDigits([333333, 123, 888, 1122]) == [0, 2, 888, 22])
+    assert(onlyEvenDigits([ ]) == [ ])
+    print('Passed!')
+
+def testPowersOf3ToN():
+    print('Testing powersOf3ToN()...', end='')
+    assert(powersOf3ToN(10.5) == [1, 3, 9])
+    assert(powersOf3ToN(27) == [1, 3, 9, 27])
+    assert(powersOf3ToN(26.999) == [1, 3, 9])
+    assert(powersOf3ToN(-1) == [ ])
+    print('Passed!')
+
+def testBinarySearchValues():
+    print('Testing binarySearchValues()...', end='')
+    assert(binarySearchValues(['a', 'c', 'f', 'g', 'm', 'q'], 'c') ==
+           [(2, 'f'), (0, 'a'), (1, 'c')])
+    assert(binarySearchValues(['a', 'c', 'f', 'g', 'm', 'q'], 'n') ==
+           [(2, 'f'), (4, 'm'), (5, 'q')])
+    print('Passed!')
+
+#################################################
+# testAll and main
+#################################################
+
+def testAll():
+    testAlternatingSum()
+    testOnlyEvenDigits()
+    testPowersOf3ToN()
+    testBinarySearchValues()
+    testSecondLargest()
+
+def main():
+    cs112_f19_week10_linter.lint()
+    testAll()
+
+if (__name__ == '__main__'):
+    main()
