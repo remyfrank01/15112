@@ -1,0 +1,465 @@
+#################################################
+# hw11.py
+#
+# Your name:Remington Frank-Marquez
+# Your andrew id:rfrankma
+#
+# Your hw11 partner's name:Nataniel Arocho-Nieves
+# Your hw11 partner's andrew id:narochon
+#
+#################################################
+
+import cs112_f19_week11_linter
+import math, copy
+import os
+import string
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+
+def confirmPolicies():
+    # Replace each 42 with True or False according to the course policies.
+    # If you are unsure, testConfirmPolicies() below contains the answers.
+    # This is just to be sure you understand those policies!
+    # We very much encourage you to collaborate, but we also want
+    # you to do it right.  Be sure both of you are working closely together,
+    # and both of you are contributing and learning the material well.
+    # Have fun!!!!! 
+    return  {
+    'I can work solo on hw11': True,
+    'I can work with one partner on hw11': True,
+    ("I must list my hw11 partner's name and andrewId at the top" +
+     "of my hw11.py file that I submit"): True,
+    'I can switch hw11 partners and then work with a new partner': False,
+    'My hw11 partner must be in 112 this semester': True,
+    'My hw11 partner must be in the same lecture or section as me': False,
+    "I can look at my hw11 partner's code": True,
+    "I can copy some of hw11 partner's code": False,
+    "I can help my hw11 partner debug their code": True,
+    "I can electronically transfer some of my code to my hw11 partner": False,
+    ("I can tell my hw11 partner line-by-line, character-by-character " +
+     "what to type so their code is nearly-identical to mine."): False,
+    }
+
+def findLargestFile(path):
+    if os.path.isfile(path):
+        return path
+    else:
+        greatestFileSize = 0
+        fileSize = 0
+        newPath = None
+        greatestPath = None
+        for foldOrFile in os.listdir(path):
+            newPath = findLargestFile(path + '/' + foldOrFile)
+            if newPath != (''):
+                fileSize = os.path.getsize(newPath)
+            if(fileSize > greatestFileSize):
+                greatestPath = newPath
+                greatestFileSize = fileSize
+        if(greatestPath == None):
+            return ('')
+        return greatestPath
+
+
+def evalPrefixNotation(L, operateL = ['+', '-', '*']):
+    if(len(L) == 1):
+        return L[0]
+    else:
+        for i in range(len(L)):
+            if(L[i] in operateL):
+                if(L[i] == operateL[0] and type(L[i+1]) == int and \
+                    type(L[i+2]) == int):
+                    L[i] = L[i+1] + L[i+2]
+                    L.pop(i+2)
+                    L.pop(i+1)
+                    return evalPrefixNotation(L)
+                elif(L[i] == operateL[1] and type(L[i+1]) == int and \
+                    type(L[i+2]) == int):
+                    L[i] = L[i+1] - L[i+2]
+                    L.pop(i+2)
+                    L.pop(i+1)
+                    return evalPrefixNotation(L)
+                elif(L[i] == operateL[2] and type(L[i+1]) == int and \
+                    type(L[i+2]) == int):
+                    L[i] = L[i+1] * L[i+2]
+                    L.pop(i+2)
+                    L.pop(i+1)
+                    return evalPrefixNotation(L)
+            elif(L[i] not in operateL and type(L[i]) != int):
+                    raise Exception('Unknown operator: ' + L[i])
+
+##############################################
+# Generic backtracking-based puzzle solver
+#
+# Subclass this class to solve your puzzle
+# using backtracking.
+#
+# To see how useful backtracking is, run with checkConstraints=True
+# and again with checkConstraints=False
+# You will see the number of total states go up (probably by a lot).
+##############################################
+
+import time
+
+class BacktrackingPuzzleSolver(object):
+    def solve(self, checkConstraints=True, printReport=False):
+        self.moves = [ ]
+        self.states = set()
+        # If checkConstraints is False, then do not check the backtracking
+        # constraints as we go (so instead do an exhaustive search)
+        self.checkConstraints = checkConstraints
+        # Be sure to set self.startArgs and self.startState in __init__
+        self.startTime = time.time()
+        self.solutionState = self.solveFromState(self.startState)
+        self.endTime = time.time()
+        if (printReport): self.printReport()
+        return (self.moves, self.solutionState)
+
+    def printReport(self):
+        print()
+        print('***********************************')
+        argsStr = str(self.startArgs).replace(',)',')') # remove singleton comma
+        print(f'Report for {self.__class__.__name__}{argsStr}')
+        print('checkConstraints:', self.checkConstraints)
+        print('Moves:', self.moves)
+        print('Solution state: ', end='')
+        if ('\n' in str(self.solutionState)): print()
+        print(self.solutionState)
+        print('------------')
+        print('Total states:', len(self.states))
+        print('Total moves: ', len(self.moves))
+        millis = int((self.endTime - self.startTime)*1000)
+        print('Total time:  ', millis, 'ms')
+        print('***********************************')
+
+    def solveFromState(self, state):
+        if state in self.states:
+            # we have already seen this state, so skip it
+            return None
+        self.states.add(state)
+        if self.isSolutionState(state):
+            # we found a solution, so return it!
+            return state
+        else:
+            for move in self.getLegalMoves(state):
+                # 1. Apply the move
+                childState = self.doMove(state, move)
+                # 2. Verify the move satisfies the backtracking constraints
+                #    (only proceed if so)
+                if ((self.stateSatisfiesConstraints(childState)) or
+                    (not self.checkConstraints)):
+                    # 3. Add the move to our solution path (self.moves)
+                    self.moves.append(move)
+                    # 4. Try to recursively solve from this new state
+                    result = self.solveFromState(childState)
+                    # 5. If we solved it, then return the solution!
+                    if result != None:
+                        return result
+                    # 6. Else we did not solve it, so backtrack and
+                    #    remove the move from the solution path (self.moves)
+                    self.moves.pop()
+            return None
+
+    # You have to implement these:
+
+    def __init__(self):
+        # Be sure to set self.startArgs and self.startState here
+        pass
+
+    def stateSatisfiesConstraints(self, state):
+        # return True if the state satisfies the solution constraints so far
+        raise NotImplementedError
+
+    def isSolutionState(self, state):
+        # return True if the state is a solution
+        raise NotImplementedError
+
+    def getLegalMoves(self, state):
+        # return a list of the legal moves from this state (but not
+        # taking the solution constraints into account)
+        raise NotImplementedError
+
+    def doMove(self, state, move):
+        # return a new state that results from applying the given
+        # move to the given state
+        raise NotImplementedError
+
+class ABCState(object):
+    def __init__(self, currLetter, letterPos):
+        self.placedLetters = {}
+        self.currLetter = currLetter
+        self.letterPos = letterPos
+        #self.placedLetters(self.currLetter) = self.letterPos
+    
+    def __repr__(self):
+        pass
+
+class solveABC(BacktrackingPuzzleSolver):
+    def __init__(self, constraints, aLocation):
+        self.remainingLetters = []
+        for letter in string.ascii_uppercase:
+            if(letter != 'A'):
+                self.remainingLetters += letter
+        self.constraints = constraints
+        self.aLocation = aLocation
+        self.startState = ABCState('A', aLocation)
+        self.movesMap = {}
+        col = 0
+        row = 0
+
+        for i in range (len(self.constraints)-1):
+            if(i%12 == 0):
+                self.movesMap[self.constraints[i]] = set([(0,0), (1,1), (2,2),\
+                    (3,3), (4,4)])
+            elif(i%6 == 0):
+                self.movesMap[self.constraints[i]] = set([(4,0), (3,1), (2,2),\
+                    (1,3),(0,4)])
+            elif(i > 0 and i < 6):
+                col = i%6 - 1
+                self.movesMap[self.constraints[i]] = set([(0, col), (1,col),\
+                    (2,col), (3,col), (4,col)])
+            elif(i > 12 and i < 18):
+                col = 5 - i%12
+                self.movesMap[self.constraints[i]] = set([(0,col), (1,col),\
+                    (2,col), (3, col), (4,col)])
+            elif(i > 6 and i < 12):
+                row = i%6 - 1
+                self.movesMap[self.constraints[i]] = set([(row, 0), (row,1),\
+                    (row,2), (row,3), (row,4)])
+            else:
+                row = 5 - i%18
+                self.movesMap[self.constraints[i]] = set([(row,0), (row,1),\
+                    (row,2), (row,3), (row,4)])
+
+    
+    @staticmethod
+    def legalPlacement(self, state):
+        index = len(state.placedLetters)
+        currLetter = self.remainingLetters[index]
+        priorLetter = self.remainingLetters[index-1]
+        (row1, col1) = state.placedLetters.values(currLetters)
+        (row2, col2) = state.placedLetters.values(priorLetter)
+
+        if((row1-row2+col1-col2) <= 1):
+            return True
+        return False
+
+    def stateSatisfiesConstraints(self, state):
+        for letter in state.placedLetters:
+            if(self.legalPlacement(state)):
+                return True
+        return False
+    
+    def isSolutionState(self, state):
+        if(len(state.remainingLetters) > 0):
+            return False
+        elif(self.stateSatisfiesConstraints(state)):
+            return True
+        else:
+            return False
+
+    def getLegalMoves(self, state): 
+        self.currLetter = self.remainingLetters[0]
+        return self.movesMap.get(currLetter)
+
+    
+    def doMove(self, state, move):
+        return ABCState(self.currLetter, move)
+    
+    
+    
+
+def flatten(L):
+    # This is bonus!
+    return 42
+
+################################################
+# ignore_rest:  place all your graphics and tests below here!
+################################################
+
+from cmu_112_graphics import *
+from tkinter import *
+
+class FreddyFractalViewer(App):
+    def appStarted(self):
+        self.level = 0
+    
+    def drawTeddyBearBoy(self, canvas, level, x, y, radius):
+        if level == 0:
+            holeRad = radius//8
+            eyeNoseDis = radius//2
+            fingerHeight = radius//3
+            canvas.create_oval(x-radius, y-radius,x+radius, y+radius,\
+                fill = 'brown', outline = 'black', width=4)
+            canvas.create_oval(x-4*holeRad, y-3*holeRad, x+4*holeRad, \
+                y+5*holeRad, fill = 'tan', width=4)
+            canvas.create_line(x-2*holeRad, y+3*holeRad, x, y+4*holeRad, \
+                x+2*holeRad, y+3*holeRad, smooth=1, width=4)
+            canvas.create_oval(x-holeRad, y-holeRad, x+holeRad,\
+                y+holeRad, fill='black')
+            canvas.create_oval((x-eyeNoseDis)-holeRad, (y-eyeNoseDis)-holeRad, \
+                (x-eyeNoseDis)+holeRad, (y-eyeNoseDis)+holeRad, \
+                    fill='black')
+            canvas.create_oval((x+eyeNoseDis)+holeRad, (y-eyeNoseDis)+holeRad, \
+                (x+eyeNoseDis)-holeRad, (y-eyeNoseDis)-holeRad, \
+                    fill='black')
+        else:
+            self.drawTeddyBearBoy(canvas, level-1, x-radius, y-radius, \
+                radius/2)
+            self.drawTeddyBearBoy(canvas, level-1, x+radius, y-radius, \
+                radius/2)
+            self.drawTeddyBearBoy(canvas, level-1, x, y, radius)
+            
+    def keyPressed(self, event):
+        if event.key in ['Up', 'Right']:
+            self.level += 1
+        elif(event.key in ['Down', 'Left']) and (self.level > 0):
+            self.level -= 1
+
+    def redrawAll(self, canvas):
+        margin = min(self.width, self.height)//2
+        x, y = margin, self.height-margin
+        radius = min(self.width, self.height)//8
+        self.drawTeddyBearBoy(canvas, self.level, x, y, radius)
+        
+
+def runFreddyFractalViewer():
+    FreddyFractalViewer(width=600, height=600)
+
+#################################################
+# Test Functions
+#################################################
+
+def testConfirmPolicies():
+    print('Testing confirmPolicies()...', end='')
+    truePolicies = [ 
+        'I can work solo on hw11',
+        'I can work with one partner on hw11',
+        ("I must list my hw11 partner's name and andrewId at the top" +
+         "of my hw11.py file that I submit"),
+        'My hw11 partner must be in 112 this semester',
+        "I can look at my hw11 partner's code",
+        "I can help my hw11 partner debug their code",
+    ]
+    falsePolicies = [
+        'I can switch hw11 partners and then work with a new partner',
+        'My hw11 partner must be in the same lecture or section as me',
+        "I can copy some of hw11 partner's code",
+        "I can electronically transfer some of my code to my hw11 partner",
+        ("I can tell my hw11 partner line-by-line, character-by-character " +
+         "what to type so their code is nearly-identical to mine."),
+    ]
+    policies = confirmPolicies()
+    # True policies:
+    for policy in truePolicies:
+        assert(policies[policy] == True)
+    # False policies (the opposite of these are actually policies)
+    for policy in falsePolicies:
+        assert(policies[policy] == False)
+    print('Passed!')
+
+def testFindLargestFile():
+    print('Testing findLargestFile()...', end='')
+    assert(findLargestFile('sampleFiles/folderA') ==
+                           'sampleFiles/folderA/folderC/giftwrap.txt')
+    assert(findLargestFile('sampleFiles/folderB') ==
+                            'sampleFiles/folderB/folderH/driving.txt')
+    assert(findLargestFile('sampleFiles/folderB/folderF') == '')
+    print('Passed!')
+
+def testEvalPrefixNotation():
+    print('Testing evalPrefixNotation()...', end='')
+    assert(evalPrefixNotation([42]) == 42)
+    assert(evalPrefixNotation(['+', 3, 4]) == 7)
+    assert(evalPrefixNotation(['-', 3, 4]) == -1)
+    assert(evalPrefixNotation(['-', 4, 3]) == 1)
+    assert(evalPrefixNotation(['+', 3, '*', 4, 5]) == 23)
+    assert(evalPrefixNotation(['+', '*', 2, 3, '*', 4, 5]) == 26)
+    assert(evalPrefixNotation(['*', '+', 2, 3, '+', 4, 5]) == 45)
+    assert(evalPrefixNotation(['*', '+', 2, '*', 3, '-', 8, 7,
+                               '+', '*', 2, 2, 5]) == 45)
+                    #(2+(3*(8-7))) * ((2*2) +5)
+    raisedAnError = False
+    try:
+        evalPrefixNotation(['^', 2, 3])
+    except:
+        raisedAnError = True
+    assert(raisedAnError == True)
+    print('Passed.')
+
+def testSolveABC():
+    print('Testing solveABC()...', end='')
+    constraints = 'CHJXBOVLFNURGPEKWTSQDYMI'
+    aLocation = (0,4)
+    board = solveABC(constraints, aLocation)
+    solution = [['I', 'J', 'K', 'L', 'A'],
+                ['H', 'G', 'F', 'B', 'M'],
+                ['T', 'Y', 'C', 'E', 'N'],
+                ['U', 'S', 'X', 'D', 'O'],
+                ['V', 'W', 'R', 'Q', 'P']
+               ]
+    assert(board == solution)
+
+    constraints = 'TXYNFEJOQCHIMBDSUWPGKLRV'
+    aLocation = (2,4)
+    board = solveABC(constraints, aLocation)
+    solution = [['V', 'U', 'S', 'O', 'P'],
+                ['W', 'T', 'N', 'R', 'Q'],
+                ['X', 'L', 'M', 'C', 'A'],
+                ['K', 'Y', 'H', 'D', 'B'],
+                ['J', 'I', 'G', 'F', 'E'],
+               ]
+    assert(board == solution)
+
+    constraints = 'TXYNFEJOQCHIMBDSUPWGKLRV' # swapped P and W
+    aLocation = (2,4)
+    board = solveABC(constraints, aLocation)
+    solution = None
+    assert(board == solution)
+    print('Passed!')
+
+def testFlatten():
+    print('Testing bonus flatten()...', end='')
+    assert(flatten([1,[2]]) == [1,2])
+    assert(flatten([1,2,[3,[4,5],6],7]) == [1,2,3,4,5,6,7])
+    assert(flatten(['wow', [2,[[]]], [True]]) == ['wow', 2, True])
+    assert(flatten([]) == [])
+    assert(flatten([[]]) == [])
+    assert(flatten(3) == 3)
+    print('Passed!')
+
+#################################################
+# testAll and main
+#################################################
+
+def testAll():
+    testConfirmPolicies()
+    testFindLargestFile()
+    testEvalPrefixNotation()
+    #testSolveABC()
+    runFreddyFractalViewer()
+    #testFlatten() # bonus
+
+def main():
+    cs112_f19_week11_linter.lint()
+    testAll()
+
+if (__name__ == '__main__'):
+    main()
