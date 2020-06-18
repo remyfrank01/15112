@@ -1,0 +1,356 @@
+#################################################
+# hw8.py
+#
+# Your name:Remington Frank-Marquez
+# Your andrew id:rfrankma
+#################################################
+'''
+# 1A:If a list is has a length greater than or equal
+    to 2, it removes the last and first elements in
+    the list and switches their positions.
+'''
+
+def slow1(lst): # N is the length of the list lst
+    assert(len(lst) >= 2)
+    a = lst.pop()    # O(1)
+    b = lst.pop(0)   # O(N)
+    lst.insert(0, a) # O(N)
+    lst.append(b)    # O(1)
+
+# 1C:
+def fast1(lst):
+    assert(len(lst) >= 2)
+    temp = lst[0]               # O(1)
+    lst[0] = lst[len(lst) - 1]  # O(1)
+    lst[len(lst) - 1] = temp    # O(1)
+
+
+'''
+# 2A: This code counts the amount of times that a number
+    isn't repeated in a list. (amount of unique numbers)
+'''
+def slow2(lst): # N is the length of the list lst
+    counter = 0                   # O(1)
+    for i in range(len(lst)):     # N Loops
+        if lst[i] not in lst[:i]: # O(N)
+            counter += 1          # O(1)
+    return counter                # O(1)
+
+def fast2(lst):
+    counter = 0                   # O(1)
+    s = set(lst)                  # O(N)
+    seen = set()                  # O(1)
+    for elem in s:                # O(N)
+        if elem not in seen:      # O(1)
+            seen.add(elem)        # O(1)
+            counter += 1          # O(1)
+    return counter                # O(1)
+
+'''
+# 3A: This program returns the letter that appears the most and
+    if there is a tie, it returns the letter with the smaller value.
+'''
+import string
+
+def slow3(s): # N is the length of the string s
+    maxLetter = ""                              # O(1)
+    maxCount = 0                                # O(1)
+    for c in s:                                 # N Loops
+        for letter in string.ascii_lowercase:   # 26 Loops
+            if c == letter:                     # O(1)
+                if s.count(c) > maxCount or \
+                   s.count(c) == maxCount and \
+                   c < maxLetter:               # O(N)
+                    maxCount = s.count(c)       # O(N)
+                    maxLetter = c               # O(1)
+    return maxLetter                            # O(1)
+
+# 3C:
+def fast3(s):
+    maxLetter = ''  # O(1)
+    maxCount = 0    # O(1)
+
+    for letter in string.ascii_lowercase:   # O(26)
+        if(s.count(letter) > maxCount or \
+           s.count(letter) == maxCount and \
+           letter < maxLetter):             # O(N)
+            maxCount = s.count(letter)      # O(N)
+            maxLetter = letter              # O(1)
+            
+    return maxLetter                        #O(1)
+        
+        
+
+'''
+# 4A: This program runs through both lists a and b and returns
+    the greatest absolute difference between elements within each list.
+'''
+def slow4(a, b): # a and b are lists with the same length N
+    assert(len(a) == len(b))
+    result = abs(a[0] - b[0])    # O(1)
+    for c in a:                  # N Loops
+        for d in b:              # N Loops
+            delta = abs(c - d)   # O(1)
+            if (delta > result): # O(1)
+                result = delta   # O(1)
+    return result                # O(1)
+
+# 4C:
+def fast4(a, b):
+    assert(len(a) == len(b))
+    maxA = max(a)               # O(N)
+    maxB = max(b)               # O(N)
+    minA = min(a)               # O(N)
+    minB = min(b)               # O(N)
+
+    differenceOne = maxA - minB   # O(1)
+    differenceTwo = maxB - minA   # O(1)
+    if(differenceOne > differenceTwo): # O(1)
+        return differenceOne           # O(1)
+    return differenceTwo               # O(1)
+    
+
+
+import cs112_f19_week8_linter
+import math, copy
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+
+def getPairSum(lst, target):
+    counts = dict()
+    for element in lst:
+        count = 1 + counts.get(element, 0)
+        counts[element] = count
+    if(len(lst) < 2):
+        return None
+    s = set(lst)
+    for val in s:
+        searchVal = target - val
+        if(searchVal == val and counts[searchVal] == 1):
+            return None
+        elif(searchVal in s):
+            return (val, searchVal)
+    return None
+
+def containsPythagoreanTriple(lst):
+    if(len(lst) <= 2):
+        return False
+    squaredList = []
+    for val in lst: 
+        squaredList += [(val ** 2)]
+    setOfVals = set(squaredList)
+    for elem in setOfVals:
+        for value in setOfVals:
+            if(value != elem):
+                if((elem + value) in setOfVals):
+                    return True
+    return False
+
+def movieAwards(oscarResults):
+    seen = set()
+    counts = dict()
+
+    for elem in oscarResults:
+        if elem[1] in seen:
+            counts[elem[1]] += 1
+        else:
+            seen.add(elem[1])
+            counts[elem[1]] = 1
+
+    return counts
+
+def friendsOfFriends(d):
+    friendsOfFriends = dict()
+    
+    for elem in d:
+        friendsOfFriends[elem] = set()
+        for name in d[elem]:
+            friOfFri = d.get(name)
+            for person in friOfFri:
+                if(person == elem):
+                    pass
+                elif(person in d[elem]):
+                    pass
+                else:
+                    friendsOfFriends[elem].add(person)          
+    return friendsOfFriends
+            
+        
+                
+        
+    
+
+#################################################
+# Test Functions
+#################################################
+
+def testFast1():
+    list1 = [1, 2, 3, 4]
+    list2 = copy.copy(list1)
+
+    assert(fast1(list1) == slow1(list2))
+
+    list3 = [90, 100, 8, 76]
+    list4 = copy.copy(list3)
+
+    assert(fast1(list3) == slow1(list4))
+    
+    list5 = [420, 69, 11, 113]
+    list6 = copy.copy(list5)
+
+    slow1(list5)
+    fast1(list5)
+    assert(list5 == list6)
+    print('Test Fast1 Complete!')
+
+def testFast2():
+    string1 = "aaccddeeff"
+    string2 = "abcdefghijjklmnop"
+    string3 = "ajhsdghHHHqqporp.plpnp"
+
+    assert(fast2(string1) == slow2(string1))
+    assert(fast2(string2) == slow2(string2))
+    assert(fast2(string3) == slow2(string3))
+
+    print("Test Fast2 Complete!")
+
+def testFast3():
+    string1 = "aaccddeeff"
+    string2 = "abcdefghijjklmnop"
+    string3 = "ajhsdghHHHqqporp.plpnp"
+
+    assert(fast3(string1) == slow3(string1))
+    assert(fast3(string2) == slow3(string2))
+    assert(fast3(string3) == slow3(string3))
+
+    print("Test Fast3 Complete!")
+    
+
+def testFast4():
+    listA = [1, 2, 3, 4]
+    listB = [10, 20, 30, 40]
+    
+    assert(fast4(listA, listB) == slow4(listA, listB))
+
+    listC = [35, 60, 78, 49]
+    listD = [34, 59, 76, 49]
+
+    assert(fast4(listC, listD) == slow4(listC, listD))
+
+    listE = [0, 0, 0, 0]
+    listF = [0, 0, 0, 0]
+
+    assert(fast4(listE, listF) == slow4(listE, listF))
+    print('Test Fast4 Complete!')
+    
+
+def testGetPairSum():
+    assert(getPairSum([5], 10) == None)
+    assert(getPairSum([10, -1, 1, -9, 4], 2) == None)
+    assert(getPairSum([1], 1) == None)
+    assert(getPairSum([5, 2], 7) in [ (5, 2), (2, 5) ])
+    assert(getPairSum([10, -1, 1, -8, 3, 1], 2) in \
+           [ (10, -8), (-8, 10), (-1, 3), (3, -1), (1, 1) ])
+    assert(getPairSum([10, -1, 1, -8, 3, 1], 10) == None)
+    print('Test getPairSum Complete!')
+
+def testPythagoreanTriple():
+    assert(containsPythagoreanTriple([1, 3, 6, 2, 5, 1, 4]) == True)
+    assert(containsPythagoreanTriple([1, 6, 2, 5, 1, 4]) == False)
+    assert(containsPythagoreanTriple([1, 11, 12, 86, 5, 13]) == True)
+    assert(containsPythagoreanTriple([0]) == False)
+    assert(containsPythagoreanTriple([1, 1, 1]) == False)
+    print("Test containsPythagoreanTriple Complete!")
+
+def testMovieAwards():
+    assert(movieAwards({ 
+        ("Best Picture", "Green Book"), 
+        ("Best Actor", "Bohemian Rhapsody"),
+        ("Best Actress", "The Favourite"),
+        ("Film Editing", "Bohemian Rhapsody"),
+        ("Best Original Score", "Black Panther"),
+        ("Costume Design", "Black Panther"),
+        ("Sound Editing", "Bohemian Rhapsody"),
+        ("Best Director", "Roma")
+          }) == { 
+        "Black Panther" : 2,
+        "Bohemian Rhapsody" : 3,
+        "The Favourite" : 1,
+        "Green Book" : 1,
+        "Roma" : 1
+                  })
+    assert(movieAwards({
+        ("Best Beans", "Bean Man"),
+        ("Best Bean Man", "Bean Man"),
+        ("Funniest Jokes", "Bean Man"),
+        ("Worst Movie", "Avengers Endgame"), #Get Rekt Scrubz
+        ("Critics Love It", "Bean Man 2: Electric Boogaloo") 
+            }) == {
+        "Bean Man" : 3,
+        "Avengers Endgame" : 1,
+        "Bean Man 2: Electric Boogaloo" : 1
+                    })
+
+    print("Test movieAwards Complete!")
+
+def testFriendsOfFriends():
+    d = { }
+    d["jon"] = set(["arya", "tyrion"])
+    d["tyrion"] = set(["jon", "jaime", "pod"])
+    d["arya"] = set(["jon"])
+    d["jaime"] = set(["tyrion", "brienne"])
+    d["brienne"] = set(["jaime", "pod"])
+    d["pod"] = set(["tyrion", "brienne", "jaime"])
+    d["ramsay"] = set()
+
+    assert(friendsOfFriends(d) == {
+     'tyrion': {'arya', 'brienne'}, 
+     'pod': {'jon'}, 
+     'brienne': {'tyrion'}, 
+     'arya': {'tyrion'}, 
+     'jon': {'pod', 'jaime'}, 
+     'jaime': {'pod', 'jon'}, 
+     'ramsay': set()}
+    )
+
+    print("Test friendsOfFriends Complete!")
+    
+
+#################################################
+# testAll and main
+#################################################
+
+def testAll():
+    testFast1()
+    testFast2()
+    testFast3()
+    testFast4()
+    testGetPairSum()
+    testPythagoreanTriple()
+    testMovieAwards()
+    testFriendsOfFriends()
+
+def main():
+    cs112_f19_week8_linter.lint()
+    testAll()
+
+if __name__ == '__main__':
+    main()
