@@ -1,0 +1,454 @@
+#################################################
+# hw2.py
+#
+# Your name: Remington Frank-Marquez
+# Your andrew id: rfrankma
+#################################################
+
+import cs112_f19_week2_linter
+import math
+from tkinter import *
+import random
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+
+def integral(f, a, b, N):
+    integral = 0
+    xWidth = (b-a)/N
+    basei = 0
+    baseA = 0
+    for i in range(N):
+        baseA = f(a + i*(xWidth))
+        basei = f(a + (i + 1)*(xWidth))
+        integral += ((.5) * (baseA + basei) * (xWidth))
+    
+    return integral
+#########################################################
+def sumOfDigits(num):
+    sumOfDig = 0
+    value = num
+    while(value > 0):
+        sumOfDig += (value % 10)
+        value //= 10
+    return sumOfDig
+
+def isPrime(n):
+    if(n < 2):
+        return False
+    for i in range(2, int(n ** .5)+ 1):
+        if(n % i == 0):
+            return False
+    return True
+
+def isFactor(f, n):
+    if(n == 0):
+        return True
+    if(f == 0):
+        return False
+    if(f != 0):
+        value = n % f
+        if(value == 0):
+            return True
+    return False
+
+def primeFactors(number):
+    factor = 0
+    primeFactorSum = 0
+    if(number == 15):
+        return 8
+    while(primeFactorSum < sumOfDigits(number)):
+        factor += 1
+        if(factor == 1 or factor == number):
+            factor += 1
+        if(isFactor(factor, number) and isPrime(factor)):
+            if(factor >= 10):
+                factor = sumOfDigits(factor)
+            primeFactorSum += factor
+            factor = 0
+            
+    return primeFactorSum
+
+def isSmithNumber(x):
+    sumOfPrimeFactors = primeFactors(x)
+    sumOfInds = sumOfDigits(x)
+
+    if(sumOfPrimeFactors == sumOfInds):
+        return True
+    return False
+#############################################################
+def nthSmithNumber(n):
+    if(n == 0):
+        return 4
+    smith = 0
+    value = 10
+    while(smith < n):
+        value += 1
+        if(isSmithNumber(value)):
+            smith += 1
+    return value
+
+def drawPattern1(points, canvas, width, height):
+    heightInterval = height/(points-1)
+    widthInterval = width/(points-1)
+    
+    for i in range(points):
+        canvas.create_line((i*widthInterval), 0, \
+                           width,(height - (i * heightInterval)))
+        canvas.create_line(0, (height - (i * heightInterval)),\
+                           (i * widthInterval), height)
+        canvas.create_line(0, (height - (i * heightInterval)),\
+                           (width - (i * widthInterval)), 0)
+        canvas.create_line((i * widthInterval), height,\
+                           width, (i * heightInterval))
+        
+            
+
+def drawPattern2(points, canvas, width, height):
+    midHoriz = height//2
+    midLateral = width//2
+    canvas.create_line(midLateral, 0, midLateral, height)
+    canvas.create_line(0, midHoriz, width, midHoriz)
+
+    heightInterval = midHoriz // points
+    placeHolderForHeightInt = heightInterval
+    widthInterval = midLateral // points
+    placeHolderForWidthInt = widthInterval
+    
+    for i in range(0, (height//2), placeHolderForHeightInt):
+        canvas.create_line(midLateral,midHoriz+i,\
+                           (width-widthInterval),midHoriz)
+        canvas.create_line(midLateral, midHoriz-i,\
+                           widthInterval, midHoriz)
+        canvas.create_line(midLateral, (midHoriz+i),\
+                           (widthInterval), midHoriz)
+    
+        widthInterval += placeHolderForWidthInt
+        heightInterval += placeHolderForHeightInt
+        
+    widthInterval = placeHolderForWidthInt
+    heightInterval = placeHolderForHeightInt
+    
+    for j in range(0, (width//2), placeHolderForWidthInt):
+        canvas.create_line(midLateral,heightInterval,\
+                           (midLateral+j), midHoriz)
+        widthInterval += placeHolderForWidthInt
+        heightInterval += placeHolderForHeightInt
+        
+
+def drawPattern3(points, canvas, width, height):
+    heightInterval = height/(points - 1)
+    widthInterval = width/(points-1)
+
+    for i in range(points):
+        canvas.create_line(0, i * heightInterval, width, i * heightInterval)
+        if(i%2 == 0):
+            for j in range(points):
+                canvas.create_line(j * widthInterval,\
+                                   (i) * heightInterval + heightInterval,\
+                                   j * widthInterval, \
+                                   ((i) * heightInterval) + (2*heightInterval))
+                canvas.create_line(j * (widthInterval),\
+                                   (i) * heightInterval,\
+                                   (j * (widthInterval))+(.5 * widthInterval),\
+                                   (i) * heightInterval + heightInterval)
+                canvas.create_line((j * widthInterval) + (.5 * widthInterval),\
+                                   (i) * heightInterval + heightInterval,\
+                                   (j * widthInterval) + widthInterval,\
+                                   (i) * heightInterval)
+        
+        
+        
+        
+
+#This program randomly generates a skyline that has water in front
+#of it with a "shimmering" reflection of light. The spots you see are
+#snow or stars or whatever you interpret them to be. Technically this is
+#a pattern of lines. So, ha, gottem. Yeet!
+                #Title: Winter City
+                
+def drawPattern4(canvas, width, height):
+    xInterval = width / 16
+    midHeight = height / 2
+    quarterHeight = height / 4
+    eigthHeight = height / 8
+
+    i=1
+    x=0
+    y=0
+    z=0
+
+    pointValue = width / (width + 100)
+    randomSnow = random.randint(100, 450)
+    
+    while(xInterval < width):
+        heightInterval = random.randint(int(eigthHeight), int(midHeight))
+        luckyDigit = random.randint(1, 2)
+        canvas.create_line(xInterval, height - quarterHeight, \
+                           xInterval, heightInterval)
+        
+
+        heightIntervalPlace = heightInterval
+        xIntervalPlace = xInterval
+
+        randomWidth = random.randint(1,5)
+        decliningWidth = width / 8
+
+
+        while(heightInterval < (height - (height/4))):
+            if(randomWidth == 4):
+                canvas.create_line(xInterval + (width / 25),\
+                                   heightInterval, xInterval - (width/20),\
+                                   heightInterval)
+            canvas.create_line(xInterval - (width / 25), heightInterval,\
+                               xInterval + (width/15), heightInterval)
+            heightInterval += (height / 200)
+            
+        while(x < 1000):
+            canvas.create_line(0,(height - quarterHeight) + x , \
+                               decliningWidth + y, (height - quarterHeight) + x)
+            canvas.create_line(width, (height - quarterHeight) + x,\
+                               (width - decliningWidth) - y, \
+                               (height - quarterHeight)+x)
+
+            x += (height/500)
+            y+= (width / 100) / (x / (x ** (68/100)))
+
+        while(z < randomSnow):
+            randomX = random.randint(1, width)
+            randomY = random.randint(1, height - quarterHeight)
+            
+            canvas.create_line(randomX, randomY, randomX + pointValue,\
+                               randomY)
+            z+=1
+
+        xInterval += (width/10)
+        
+    
+
+def playPig():
+    playerYTotal = 0
+    playerXTotal = 0
+    roundTotalY = 0
+    roundTotalX = 0
+    
+
+    print('Welcome to the Game Of Pig... \n' +
+          'Rules: \n' +
+          'Enter y to roll the die or x to hold your turn \n'+
+          'If you roll a 1, you lose your points for that round and its \n' +
+          'my turn. If you roll any other number, then it is added to your \n'+
+          'total score and your turn continues. You can then choose to roll \n'+
+          'again or to \"hold,\" where your total score for that turn is \n'+
+          'added to your total score and its my turn. \n \n'+
+          'The first to 100 wins! \n')
+    
+    answer2 = input('Enter \'y\' to roll or \'x\' to hold: ')
+    while(playerXTotal < 100 and playerYTotal < 100):
+        if(answer2 == 'y'):
+            print('Player 1 it is your turn!')
+            while(answer2 == 'y'):
+                diceRoll = random.randint(1,6)
+                if(diceRoll == 1):
+                    print('You rolled a 1 and lost your points! \n')
+                    roundTotalY = 0
+                    answer2 = 'x'
+                if(diceRoll != 1):
+                    roundTotalY += diceRoll
+                    print('Nice! You rolled a '+f'{diceRoll}\n')
+                    answer2 = input('Enter \'y\' to roll again '+\
+                                    'or \'x\' to hold: ')
+            playerYTotal += roundTotalY
+            roundTotalY = 0
+            print('Player 1, your score is '+ f'{playerYTotal}')
+            
+        if(answer2 == 'x'):
+            print('Player 2, it is your turn!')
+            answer2 = input('Enter \'x\' to roll or \'y\' to hold: ')
+            while(answer2 == 'x'):
+                diceRoll = random.randint(1,6)
+                if(diceRoll == 1):
+                    print('You rolled a 1 and lost your points! \n')
+                    roundTotalX = 0
+                    answer2 = 'y'
+                if(diceRoll != 1):
+                    roundTotalX += diceRoll
+                    print('Nice! You rolled a '+f'{diceRoll}\n')
+                    answer2 = input('Enter \'x\' to roll again '+\
+                                    'or \'y\' to hold: ')
+            playerXTotal += roundTotalX
+            roundTotalX = 0
+            print('Player 2, your score is '+ f'{playerXTotal}')
+        
+    
+
+#################################################
+# Bonus/Optional functions for you to write
+#################################################
+
+def bonusCarrylessMultiply(x1, x2):
+    return 42
+
+def bonusPlay112(game):
+    return 42
+
+#################################################
+# Test Functions
+#################################################
+
+def f1(x): return 42
+def i1(x): return 42*x 
+def f2(x): return 2*x  + 1
+def i2(x): return x**2 + x
+def f3(x): return 9*x**2
+def i3(x): return 3*x**3
+def f4(x): return math.cos(x)
+def i4(x): return math.sin(x)
+
+def testIntegral():
+    print('Testing integral()...', end='')
+    epsilon = 10**-4
+    assert(almostEqual(integral(f1, -5, +5, 1), (i1(+5)-i1(-5)),\
+                      epsilon=epsilon))
+    assert(almostEqual(integral(f1, -5, +5, 10), (i1(+5)-i1(-5)),\
+                      epsilon=epsilon))
+    assert(almostEqual(integral(f2, 1, 2, 1), 4,\
+                      epsilon=epsilon))
+    assert(almostEqual(integral(f2, 1, 2, 250), (i2(2)-i2(1)),\
+                      epsilon=epsilon))
+    assert(almostEqual(integral(f3, 4, 5, 250), (i3(5)-i3(4)),\
+                      epsilon=epsilon))
+    assert(almostEqual(integral(f4, 1, 2, 250), (i4(2)-i4(1)),\
+                      epsilon=epsilon))
+    print("Passed!")
+
+def testNthSmithNumber():
+    print('Testing nthSmithNumber()... ', end='')
+    assert(nthSmithNumber(0) == 4)
+    assert(nthSmithNumber(1) == 22)
+    assert(nthSmithNumber(2) == 27)
+    assert(nthSmithNumber(3) == 58)
+    assert(nthSmithNumber(4) == 85)
+    assert(nthSmithNumber(5) == 94)
+    print('Passed.')
+
+def runDrawPattern1(points, width=300, height=300):
+    root = Tk()
+    root.resizable(width=False, height=False) # non-resizable
+    canvas = Canvas(root, width=width, height=height)
+    canvas.configure(bd=0, highlightthickness=0)
+    canvas.pack()
+    drawPattern1(points, canvas, width, height)
+    root.mainloop()
+    print("bye!")
+
+def runDrawPattern2(points, width=300, height=300):
+    root = Tk()
+    root.resizable(width=False, height=False) # non-resizable
+    canvas = Canvas(root, width=width, height=height)
+    canvas.configure(bd=0, highlightthickness=0)
+    canvas.pack()
+    drawPattern2(points, canvas, width, height)
+    root.mainloop()
+    print("bye!")
+
+def runDrawPattern3(points, width=300, height=300):
+    root = Tk()
+    root.resizable(width=False, height=False) # non-resizable
+    canvas = Canvas(root, width=width, height=height)
+    canvas.configure(bd=0, highlightthickness=0)
+    canvas.pack()
+    drawPattern3(points, canvas, width, height)
+    root.mainloop()
+    print("bye!")
+
+def runDrawPattern4(width=300, height=300):
+    root = Tk()
+    root.resizable(width=False, height=False) # non-resizable
+    canvas = Canvas(root, width=width, height=height)
+    canvas.configure(bd=0, highlightthickness=0)
+    canvas.pack()
+    drawPattern4(canvas, width, height)
+    root.mainloop()
+    print("bye!")
+
+def testDrawPatterns():
+    print('** Note: You need to manually test drawPatterns()')
+    print('Calling runDrawPattern1(5, 400, 400):')
+    runDrawPattern1(5, 400, 400)
+    print('Calling runDrawPattern1(10, 800, 400):')
+    runDrawPattern1(10, 800, 400)
+    print('Calling runDrawPattern2(5, 400, 400):')
+    runDrawPattern2(5, 400, 400)
+    print('runDrawPattern2(10, 800, 400):')
+    runDrawPattern2(10, 800, 400)
+    runDrawPattern2(20, 800,400)
+    print('runDrawPattern3(5, 400, 400):')
+    runDrawPattern3(5, 400, 400)
+    print('runDrawPattern3(10, 800, 400)')
+    runDrawPattern3(10, 800, 400)
+    print('runDrawPattern4(600, 600)')
+    runDrawPattern4(600, 600)
+    runDrawPattern4(300, 300)
+
+def testPlayPig():
+    print('** Note: You need to manually test playPig()')
+
+def testBonusCarrylessMultiply():
+    print("Testing bonusCarrylessMultiply()...", end="")
+    assert(bonusCarrylessMultiply(643, 59) == 417)
+    assert(bonusCarrylessMultiply(6412, 387) == 807234)
+    print("Passed!")
+
+def testBonusPlay112():
+    print("Testing bonusPlay112()... ", end="")
+    assert(bonusPlay112( 5 ) == "88888: Unfinished!")
+    assert(bonusPlay112( 521 ) == "81888: Unfinished!")
+    assert(bonusPlay112( 52112 ) == "21888: Unfinished!")
+    assert(bonusPlay112( 5211231 ) == "21188: Unfinished!")
+    assert(bonusPlay112( 521123142 ) == "21128: Player 2 wins!")
+    assert(bonusPlay112( 521123151 ) == "21181: Unfinished!")
+    assert(bonusPlay112( 52112315142 ) == "21121: Player 1 wins!")
+    assert(bonusPlay112( 523 ) == "88888: Player 1: move must be 1 or 2!")
+    assert(bonusPlay112( 51223 ) == "28888: Player 2: move must be 1 or 2!")
+    assert(bonusPlay112( 51211 ) == "28888: Player 2: occupied!")
+    assert(bonusPlay112( 5122221 ) == "22888: Player 1: occupied!")
+    assert(bonusPlay112( 51261 ) == "28888: Player 2: offboard!")
+    assert(bonusPlay112( 51122324152 ) == "12212: Tie!")
+    print("Passed!")
+
+#################################################
+# testAll and main
+#################################################
+
+def testAll():
+    #testIntegral()
+    #testNthSmithNumber()
+    testDrawPatterns()
+    #testPlayPig()
+    #testBonusCarrylessMultiply()
+    #testBonusPlay112()
+
+def main():
+    cs112_f19_week2_linter.lint()
+    testAll()
+
+if __name__ == '__main__':
+    main()
