@@ -1,0 +1,553 @@
+#################################################
+# hw4.py
+#
+# Your name: Remington Frank-Marquez
+# Your andrew id: rfrankma
+#################################################
+
+
+import cs112_f19_week4_linter
+import math, copy
+
+#################################################
+# Helper functions
+#################################################
+
+def almostEqual(d1, d2, epsilon=10**-7):
+    # note: use math.isclose() outside 15-112 with Python version 3.5 or later
+    return (abs(d2 - d1) < epsilon)
+
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
+#################################################
+# Functions for you to write
+#################################################
+
+#################################################
+# bestScrabbleScore
+#################################################
+#This program calculates for the best possible words to play
+#given a dictionary, available letters, and the respective point
+#values of each letter. The program makes use of helper functions
+#that both check if each word in the given dictionary is able to
+#be played with the letters in the hand and the score of the word
+#if it were to be played. The main function then returns the greatest
+#scoring word(s) and score.
+def removeRepeats(wordList):
+    seen = []
+    for elem in wordList:
+        if elem not in seen:
+            seen.append(elem)
+    return seen
+    
+
+def possibleWords(dictionary, hand):
+    validWords = []
+    for word in dictionary:
+        currWord = ''
+        copyHand = copy.copy(hand)
+        for letter in word:
+            if letter in copyHand:
+               currWord += letter
+               copyHand.remove(letter)
+        if(currWord == word):
+            validWords += [word]
+    return validWords
+
+
+
+#possibleWords(["xyz", "xz", "zz"], ["x", "z", "k", "r"])
+                    
+
+def wordScore(word, letterPoints):
+    letterScore = 0
+    alphPlace = 0
+    for i in range(len(word)):
+        alphPlace = ord(word[i]) - ord('a')
+        letterScore += letterPoints[alphPlace]
+    return letterScore
+
+'''wordScore("xyz", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+		  , 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+		  , 24, 25, 26])'''
+
+def bestScrabbleScore(dictionary, letterScores, hand):
+    currScore = 0
+    bestScore = 0
+    validWords = possibleWords(dictionary, hand)
+    topWord = []
+    topScore = []
+    if(len(validWords) == 0):
+        return None
+    for elem in validWords:
+        currScore = wordScore(elem, letterScores)
+        if(currScore > bestScore):
+            bestScore = currScore
+            topWord = []
+            topWord += [elem]
+            topScore = []
+            topScore += [currScore]
+            currScore = 0
+        if(currScore == bestScore):
+            topWord += [elem]
+    if(len(topWord) == 1):
+        return (str(topWord[0]), topScore[0])
+    return (list(topWord), int(topScore[0]))
+            
+
+#################################################
+# Person class
+#################################################
+#This program keeps track of various individuals and their
+#ages, names, and friends. This program makes use of classes
+#and functions.
+class Person(object):
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+        self.friend = []
+
+    def addFriend(self, friend):
+        if friend not in self.friend and friend != self:
+            self.friend += [friend]
+
+    def getAge(self):
+        return self.age
+
+    def getFriends(self):
+        if(len(self.friend) == 0):
+            return None
+        return self.friend
+
+    def getName(self):
+        return self.name
+        
+
+#################################################
+# playMyTextAdventureGame
+'''Questions:
+1)a kitchen instance
+2)the program calls getDirection which assigns the direction name
+containing South to return 1.
+3)AttributeError. You would be unable to remove items from locations. You
+can't append items!
+4)To print the direction names with a comma between them as a string
+5)The short name is a simplified version of name. So instead of having
+to type out the entire phrase {a water pitcher} we can instead write pitcher
+6) The game inventory is the inventory that the player has. It is
+written in the code as self.inventory since it belongs to the class Game()
+7)The .split method breaks up the get command into a verb and a noun. So,
+for example, if the command was drink water, it would first take the
+verb drink and then the noun water.
+8)The find item method will either look in the list of room items, or
+it will look in the players inventory depending on the command given by the
+user.
+9)In the doGet method, the code checks for whether or not self.inventory
+is equal to 2 and then does nothing if it is and lets the player know that
+their inventory is full.
+10)game.doDrink checks for the name of the glass. If it is a full glass,
+full is in the nampe. If it is an empty glass, empty is in the name and thus,
+game.doDrink checks which condition is true.
+'''
+#################################################
+#A lot of this code is based off of code found from the example
+#provided here:http://www.cs.cmu.edu/~112/notes/hw4.html
+#This program is an escape room game. The user needs to find all the clues
+#in order to input the correct password to exit and win the game.
+
+class Room(object):
+    def __init__(self, name):
+        self.name = name
+        self.exits = [None] * 6 #north, east, west, south, up, down
+        self.items = [ ]
+
+    def getDirection(self, direcName):
+        direcName = direcName.lower()
+        if(direcName in ['n', 'north']): return 0
+        elif (direcName in ['s', 'south']): return 1
+        elif (direcName in ['e', 'east']): return 2
+        elif (direcName in ['w', 'west']): return 3
+        elif (direcName in ['d', 'down']): return 4
+        elif (direcName in ['u', 'up']): return 5
+        else:
+            print("Sorry, that isn't a direction you can go in.")
+            return None
+
+    def setExit(self, direcName, room):
+        direction = self.getDirection(direcName)
+        self.exits[direction] = room
+
+    def getExit(self, direcName):
+        direction = self.getDirection(direcName)
+        if(direction == None):
+            return None
+        else:
+            return self.exits[direction]
+    
+    def getAvailableDirecNames(self):
+        availableDirections = [ ]
+        for direcName in ['North', 'South', 'East', 'West', 'down', 'up']:
+            if(self.getExit(direcName) != None):
+                availableDirections.append(direcName)
+            if(availableDirections == [ ]):
+                return 'None'
+            else:
+                return ', '.join(availableDirections)
+
+class Item(object):
+    def __init__(self, name, shortName):
+        self.name = name
+        self.shortName = shortName
+
+class Game(object):
+    def __init__(self, name, goal, startingRoom, startingInventory):
+        self.name = name
+        self.goal = goal
+        self.room = startingRoom
+        self.commandCounter = 0
+        self.inventory = startingInventory
+        self.gameOver = False
+
+    def getCommand(self):
+        self.commandCounter += 1
+        response = input(f'[{self.commandCounter}] Enter a command: ')
+        print()
+        if(response == ''): response = 'help'
+        responseParts = response.split(' ')
+        command = responseParts[0]
+        target = '' if (len(responseParts) == 1) else responseParts[1]
+        return command, target
+
+    def play(self):
+        print(f'Welcome to {self.name}!')
+        print(f'Your goal: {self.goal}!')
+        print('Just press enter for help.')
+        while (not self.gameOver):
+            self.doLook()
+            command, target = self.getCommand()
+            if (command == 'help'): self.doHelp()
+            elif (command == 'look'): self.doLook()
+            elif (command == 'go'): self.doGo(target)
+            elif (command == 'input'): self.doInput(target)
+            elif (command == 'read'): self.doRead(target)
+            elif (command == 'open'): self.doOpen(target)
+            elif (command == 'get'): self.doGet(target)
+            elif (command == 'quit'): break
+            else: print(f'Unknown command: {command}. Enter "help" for help.')
+        print('Goodbye!')
+
+    def doHelp(self):
+         print('''
+            Hey-o! Here are some basic commands if you are stuck:
+                help(print this message)
+                look(look around in your current room)
+                go north (or west, east, south)
+                input thing
+                open thing
+                read thing
+            Good luck!''')
+
+    def printItems(self, items):
+        if(len(items) == 0):
+            print('Nothing')
+        else:
+            itemNames = [item.name for item in items]
+            print(', '.join(itemNames))
+
+    def findItem(self, targetItemName, itemList):
+        for item in itemList:
+            if(item.shortName == targetItemName):
+                return Item
+        return None
+        
+    def doLook(self):
+        if(self.room.name != 'wall' or self.room.name != 'frontDoor'):
+            print(f'\nI am in {self.room.name}')
+        else:
+            print(f'\nI am at {self.room.name}')
+        print(f'I can go these directions: \
+            {self.room.getAvailableDirecNames()}')
+        print('I can see these things: ', end='')
+        self.printItems(self.room.items)
+        print('I am carrying these things: ', end='')
+        self.printItems(self.inventory)
+        print()
+        
+    def doGo(self, direcName):
+        newRoom = self.room.getExit(direcName)
+        if (newRoom == None):
+            print(f'Sorry, that isn\'t a valid direction')
+        else:
+            self.room = newRoom
+
+    def doOpen(self, objectName):
+        if('Wall' not in self.room.name):
+            print('There is nothing to open here')
+        elif(objectName != 'floor'):
+            print('I can not open that!')
+        else:
+            print('''You opened a secret hatch!
+            Try to go down it''')
+
+    def doInput(self, code):
+        correctPass = input('Enter the code: ')
+        if(code != 'code'):
+            print('I do not know what that means.')
+        elif('Door' not in self.room.name):
+            print('I can not input the code here')
+        elif(correctPass != 'yeet'):
+            print('That is the incorrect code.')
+        else:
+            print('Woah! You escaped!')
+            self.gameOver = True
+
+    def doRead(self, objectName):
+        paper = self.findItem('paper', self.inventory)
+        book = self.findItem('book', self.inventory)
+        if(objectName != 'paper' and objectName != 'book'):
+            print('I can not read that')
+        elif(paper == None and book == None):
+            print('I have nothing to read')
+        elif(objectName == 'paper'):
+            print('''Dear Guest,
+                
+                It is I, the Game Master. Welcome to my Escape Room
+                and Bravo to you for thinking you can get out of here!
+                As you might have seen, there is a keypad that is keeping
+                from getting out. Once you have found all the clues and input
+                the corret Code, you will be able to leave. Otherwise...
+                YOU WILL BE STUCK FOREVER!
+                unless you quit the game or something.
+                
+                Best Of Luck,
+                Game Master
+
+                P.S. Look where others would not''')
+        elif(objectName == 'book'):
+            print('''Reading is far too boring, let
+                us get back to the task at hand.''')
+
+    def doGet(self, itemName):
+        item = self.findItem(itemName, self.room.items)
+        if(item == None):
+            print('Sorry, but I do not see that here.')
+        else:
+            self.room.items.remove(item)
+            self.inventory.append(item)
+    
+
+def playMyTextAdventureGame():
+    library = Room('The Library')
+    bathroom = Room('The Bathroom')
+    closet = Room('The Closet')
+    frontDoor = Room('The Front Door')
+    mainRoom = Room('The Main Room')
+    wall = Room('A Wall')
+    secretHatch = Room('The Secret Hatch')
+
+    mainRoom.setExit('East', library)
+    mainRoom.setExit('South', bathroom)
+    mainRoom.setExit('North', frontDoor)
+    mainRoom.setExit('West', wall)
+    bathroom.setExit('North', mainRoom)
+    library.setExit('West', mainRoom)
+    library.setExit('South', closet)
+    closet.setExit('North', library)
+    wall.setExit('East', mainRoom)
+    wall.setExit('Down', secretHatch)
+    secretHatch.setExit('Up', wall)
+
+    paper = Item('a paper with a message on it', 'paper')
+    book = Item('a very old, dull looking book', 'book')
+    library.items.append(book)
+    earrings = Item('a pair of shiny earrings', 'earrings')
+    bathroom.items.append(earrings)
+    yarn = Item('a piece of yarn', 'yarn')
+    library.items.append(yarn)
+    tuxedos = Item('four identical, epensive looking tuxedos', 'tuxedos')
+    closet.items.append(tuxedos)
+    eggs = Item('three glorious, shiny, extravagant eggs', 'eggs')
+    secretHatch.items.append(eggs)
+
+    game = Game('The Escape Room',
+                'Escape!',
+                mainRoom,
+                [ paper ])
+    game.play()
+
+
+#################################################
+# bonus: linearRegression
+#################################################
+
+def linearRegression(pointsList):
+    return 42
+
+#################################################
+# bonus: runSimpleProgram
+#################################################
+
+def runSimpleProgram(program, args):
+    return 42
+
+#################################################
+# Test Functions
+#################################################
+
+def testBestScrabbleScore():
+    print("Testing bestScrabbleScore()...", end="")
+    def dictionary1(): return ["a", "b", "c"]
+    def letterScores1(): return [1] * 26
+    def dictionary2(): return ["xyz", "zxy", "zzy", "yy", "yx", "wow"] 
+    def letterScores2(): return [1+(i%5) for i in range(26)]
+    assert(bestScrabbleScore(dictionary1(), letterScores1(), list("b")) ==
+                                        ("b", 1))
+    assert(bestScrabbleScore(dictionary1(), letterScores1(), list("ace")) ==
+                                        (["a", "c"], 1))
+    assert(bestScrabbleScore(dictionary1(), letterScores1(), list("b")) ==
+                                        ("b", 1))
+    assert(bestScrabbleScore(dictionary1(), letterScores1(), list("z")) ==
+                                        None)
+    # x = 4, y = 5, z = 1
+    # ["xyz", "zxy", "zzy", "yy", "yx", "wow"]
+    #    10     10     7     10    9      -
+    assert(bestScrabbleScore(dictionary2(), letterScores2(), list("xyz")) ==
+                                         (["xyz", "zxy"], 10))
+    assert(bestScrabbleScore(dictionary2(), letterScores2(), list("xyzy")) ==
+                                        (["xyz", "zxy", "yy"], 10))
+    assert(bestScrabbleScore(dictionary2(), letterScores2(), list("xyq")) ==
+                                        ("yx", 9))
+    assert(bestScrabbleScore(dictionary2(), letterScores2(), list("yzz")) ==
+                                        ("zzy", 7))
+    assert(bestScrabbleScore(dictionary2(), letterScores2(), list("wxz")) ==
+                                        None)
+    print("Passed!")
+
+def testPersonClass():
+    print('Testing Person Class...', end='')
+    fred = Person('fred', 32)
+    assert(isinstance(fred, Person))
+    assert(fred.getName() == 'fred')
+    assert(fred.getAge() == 32)
+    assert(fred.getFriends() == None)
+
+    wilma = Person('wilma', 35)
+    assert(wilma.getName() == 'wilma')
+    assert(wilma.getAge() == 35)
+    assert(wilma.getFriends() == None)
+
+    wilma.addFriend(fred)
+    assert(wilma.getFriends() == [fred])
+    assert(fred.getFriends() == None)
+    wilma.addFriend(fred)
+    assert(wilma.getFriends() == [fred]) # don't add twice!
+
+    barney = Person('barney', 28)
+    fred.addFriend(wilma)
+    fred.addFriend(barney)
+    assert(fred.getFriends() == [wilma, barney])
+ 
+    fred.addFriend(barney)  # don't add twice
+    fred.addFriend(fred)    # ignore self as a friend
+    assert(fred.getFriends() == [wilma, barney])
+    print('Passed!')
+
+def testPlayMyTextAdventureGame():
+    print('***************************************************')
+    print('Testing playMyTextAdventureGame()...')
+    print('This requires manual testing, so we will just run the game:')
+    print('***************************************************')
+    playMyTextAdventureGame()
+    print('***************************************************')
+
+def relaxedAlmostEqual(d1, d2):
+    epsilon = 10**-3 # really loose here
+    return abs(d1 - d2) < epsilon
+
+def tuplesAlmostEqual(t1, t2):
+    if (len(t1) != len(t2)): return False
+    for i in range(len(t1)):
+        if (not relaxedAlmostEqual(t1[i], t2[i])):
+            return False
+    return True
+
+def testBonusLinearRegression():
+    print("Testing bonus problem linearRegression()...", end="")
+
+    ans = linearRegression([(1,3), (2,5), (4,8)])
+    target = (1.6429, 1.5, .9972)
+    assert(tuplesAlmostEqual(ans, target))
+    
+    ans = linearRegression([(0,0), (1,2), (3,4)])
+    target = ((9.0/7), (2.0/7), .9819805061)
+    assert(tuplesAlmostEqual(ans, target))
+
+    #perfect lines
+    ans = linearRegression([(1,1), (2,2), (3,3)])
+    target = (1.0, 0.0, 1.0)
+    assert(tuplesAlmostEqual(ans, target))
+    
+    ans = linearRegression([(0,1), (-1, -1)])
+    target = (2.0, 1.0, 1.0)
+    assert(tuplesAlmostEqual(ans, target))
+
+    #horizontal lines
+    ans = linearRegression([(1,0), (2,0), (3,0)])
+    target = (0.0, 0.0, 1.0)
+    assert(tuplesAlmostEqual(ans, target))
+
+    ans = linearRegression([(1,1), (2,1), (-1,1)])
+    target = (0.0, 1.0, 1.0)
+    assert(tuplesAlmostEqual(ans, target))
+    print("Passed!")
+
+def testBonusRunSimpleProgram():
+    print("Testing bonus problem runSimpleProgram()...", end="")
+    largest = """! largest: Returns max(A0, A1)
+                   L0 - A0 A1
+                   JMP+ L0 a0
+                   RTN A1
+                   a0:
+                   RTN A0"""
+    assert(runSimpleProgram(largest, [5, 6]) == 6)
+    assert(runSimpleProgram(largest, [6, 5]) == 6)
+
+    sumToN = """! SumToN: Returns 1 + ... + A0
+                ! L0 is a counter, L1 is the result
+                L0 0
+                L1 0
+                loop:
+                L2 - L0 A0
+                JMP0 L2 done
+                L0 + L0 1
+                L1 + L1 L0
+                JMP loop
+                done:
+                RTN L1"""
+    assert(runSimpleProgram(sumToN, [5]) == 1+2+3+4+5)
+    assert(runSimpleProgram(sumToN, [10]) == 10*11//2)
+    print("Passed!")
+
+#################################################
+# testAll and main
+#################################################
+
+def testAll():
+    testBestScrabbleScore()
+    #testPersonClass()
+    #testPlayMyTextAdventureGame()
+    #testBonusLinearRegression()
+    #testBonusRunSimpleProgram()
+
+def main():
+    cs112_f19_week4_linter.lint()
+    testAll()
+
+if __name__ == '__main__':
+    main()
